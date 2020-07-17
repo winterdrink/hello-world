@@ -35,41 +35,52 @@ Byeol.room2{end} % you can see last element with this.
 
 clear Byeol
 
-% you can clear specific variable(element?? clear Byeol.room1 doesn't work.) with this. If you put two %, it makes section from there.
+% you can clear specific variable(element?? clear Byeol.room1 doesn't work. though clear cell work.) with this. If you put two %, it makes section from there.
 
 % cell example
-subjectdir = fullfile(datdir, '190705_JJW'); % ancient way... :) 
+subjectdir = fullfile(datdir, '190705_JJW'); % ancient way... :) make JJW in datdir to one file
 
-%cd .. change you directory to what it was before.
-% cd(datdir) 愿��� ����硫� ����, 愿��� ����怨� �띠�쇰㈃ '�댁�� �� �ъ�댁�� �� �ｌ�댁�� ��' 
+%cd .. change your directory to upper one.
+% cd(datdir)
 
-filelist = dir(datdir);
-filenames = {filelist.name}'; % filelist.name �대�쇨�留� 移�硫� ans濡� �������� ����, 洹몃���� {} ��嫄� �댁＜怨�, �대�щ㈃ 媛�濡�濡� ���ㅻ��源� 移쇰�쇰깹�곕� 留��ㅻ�ㅻ㈃ 留�吏�留��� ' �댁�� transpose
-filenames = filenames(3:end); % ����爰쇰��濡� ��硫� ��履� (�닿꼍�곕�� 2媛�)�� ., ..  ����
-size(filenames)
-numel(filenames)
-whos filenames
+filelist = dir(datdir); 
+% dir(datdir) = list all the elements in datdir, but datdir has cells and characters -> dir(datdir) should be struct
+% name(ch), folder(ch), date(ch), bytes(cell), isdir(?), datenum(cell) are included in a struct named filelist, 
+% whos filelist.name doesn't work, how do you see this?
 
-% control z ��硫� 痍⑥��, control shift z�� 痍⑥���� 嫄� 痍⑥��
+filenames = {filelist.name}'; % name, Character in filelist, make it independent variable.
+% ans = {} {} {} ... if you put ' behind this, {filelist.name}' = column vector of {} = {}; {}; {}; ...
+
+filenames = filenames(3:end); 
+% 3-end elements are substracted from variable filenames, first and second are . / .., no need.
+
+size(filenames) % row and column
+numel(filenames) % number of bigger column/row, numel() = prod(size)?
+whos filenames % cell, 52 by 1 vector
+
+% control z : , control shift z : ,
 % cell type exercise
-subjectdir = fullfile(datdir, filenames(1)); % 泥ル�吏� 爰� ����二쇈��
-filelist_sub = dir(subjectdir);         % It would make an error. Do you get the reason? subjectdir = cell, must be a scalar or vector
-filelist_sub = dir(string(subjectdir)); % because the input was cell not string
+
+subjectdir = fullfile(datdir, filenames(1)); % fullfile = make cell?, datdir = became '~' address above. + first element of filenames, '190704LEJ' (after column 54)
+filelist_sub = dir(subjectdir);         % It would make an error. Do you get the reason? dir = listing, need elements to listing, subjectdir = cell, must be a scalar or vector
+filelist_sub = dir(string(subjectdir)); % because the input was cell not string, if you string(subjectdir), it works. here, subjectdir = LEJ
 filelist_sub = dir(subjectdir(1));      % It would make an error. Do you get the reason?
-filelist_sub = dir(subjectdir{1});      % It would make an error. Do you get the reason? ���� 以�愿���/��愿��� ���� �ㅻ�, 以�愿��� �곕㈃ �ъ���� ��, ��愿��� �곕㈃ �ㅽ�몃���, ���� 踰�寃�
+filelist_sub = dir(subjectdir{1});      % It would make an error. Do you get the reason? 
+???
 
-newcell = filenames(1:5); % ��爰쇰��� 遺��ъ�� ��
-% newcell = filenames{1:5}; �대��寃� ��硫� ans濡� 醫�醫�醫� ����, �ㅼ��媛� �대� 李얘� �띠�� 嫄곕�� �� ���� �ｌ�댁＜��
-% 以�愿���
+% wanna pull out first element in LEJ, subjectdir = cell, peel off the cell with {}
 
-newcell = cell(2,5);
-newcell(1:5) = filenames(1:5);  % not we intend, �몃�遺��� ������濡� ��
-newcell(1,:) = filenames;       % error 1���� 紐⑤�� ��, filenames�� 50*1�대��濡� ��臾� 而ㅼ�� ���ㅼ�닿�
-% commend + ���댄�� = ��源�吏� 泥���源�吏� ����洹�, �⑥�대�濡��� option
+newcell = filenames(1:5); % 5 by 1 cell, first to fifth elements make column vector
+% newcell = filenames{1:5}; % just first element of the filenames, LEJ
 
 newcell = cell(2,5);
-newcell(1,1:5) = filenames(1:5); % 泥� �댁��留� �ㅼ�닿�吏�
-newcell(2,1:5) = filenames(6:10);
+newcell(1:5) = filenames(1:5);  % not we intend, put elements in row order not column order.
+newcell(1,:) = filenames;       % error, newcell(1,:) = first element only, size(newcell) = 1 by 1, size(filenames) = 50 by 1
+% commend + arrows = move cursor to start and end, option+arrows = move cursor front/backside word by word
+
+newcell = cell(2,5);
+newcell(1,1:5) = filenames(1:5); % in row order, 04 LEJ, 05 JJW, 08 LYR.... in first row 
+newcell(2,1:5) = filenames(6:10); % in row order, 10 YSY, 11 KDH, ..... in second row
 
 % how to use loop for this?
 newcell = cell(2,5);
