@@ -115,8 +115,8 @@ new_idx = [4 5 6; 7 8 9; 1 2 3];
 isequal(b_idx([2 3 1],:), new_idx) % make a vector of b_idx's second, third, first rows, not new_indx's
 new_idx = new_idx(:)'; % new_indx(:) = make a vetor of all the elements of new_indx, with ', it makes a row vector.
 
-x = 1:25;
-reshape(x, 5, 5)'  % all elements in x -> 5 by 5, with ', transposed
+y = 1:25;
+reshape(y, 5, 5)'  % all elements in x -> 5 by 5, with ', transposed
 
 % Let's make this!
 %      0     0     0     0     0
@@ -188,8 +188,8 @@ str2num(txt{10}{160,3})+1           % string > double
 num2str(str2num(txt{10}{160,3})+1)  % double > string
 
 % for Mac
-x = readtable(fullfile(subjectdir, filenames_sub{8}),'ReadVariableNames',false); % readtable : 파일에서 열 방향 데이터를 읽어 테이블을 만듭니다.
-age = str2num(string(x{1,1}))
+y = readtable(fullfile(subjectdir, filenames_sub{8}),'ReadVariableNames',false); % readtable : 파일에서 열 방향 데이터를 읽어 테이블을 만듭니다.
+age = str2num(string(y{1,1}))
 num2str(age)
 % y = num2str(y) -> character, y = string(y) -> string
 
@@ -223,9 +223,9 @@ for i = 1:20
     subjectdir = fullfile(datdir, filenames{i});
     filelist_sub = dir(string(subjectdir))'; 
     filenames_sub = {filelist_sub.name}' ;
-    x = readtable(fullfile(subjectdir, filenames_sub{8}),'ReadVariableNames',false);
-    sex{i} = string(x{2,1})
-    edu{i} = string(x{3,1})
+    y = readtable(fullfile(subjectdir, filenames_sub{8}),'ReadVariableNames',false);
+    sex{i} = string(y{2,1})
+    edu{i} = string(y{3,1})
     % sex 
     if strcmp(sex{i}, 'Female')
         sex_d2(i,1) = 1;
@@ -237,7 +237,7 @@ for i = 1:20
     sex_double = sex_d2
   
     % edu
-    edu{i} = string(x{3,1});
+    edu{i} = string(y{3,1});
     if strcmp(edu{i}, edu_category{1})
         edu_d2(i,1) = 1;
     elseif strcmp(edu{i}, edu_category{2})
@@ -255,8 +255,8 @@ for i = 22:numel(sex)
     subjectdir = fullfile(datdir, filenames{i});
     filelist_sub = dir(string(subjectdir))'; 
     filenames_sub = {filelist_sub.name}' ;
-    x = readtable(fullfile(subjectdir, filenames_sub{8}),'ReadVariableNames',false);
-    sex{i} = string(x{2,1})
+    y = readtable(fullfile(subjectdir, filenames_sub{8}),'ReadVariableNames',false);
+    sex{i} = string(y{2,1})
     % sex 
     if strcmp(sex{i}, 'Female')
         sex_d2(i,1) = 1;
@@ -268,7 +268,7 @@ for i = 22:numel(sex)
     sex_double = sex_d2
   
     % edu
-    edu{i} = string(x{3,1});
+    edu{i} = string(y{3,1});
     if strcmp(edu{i}, edu_category{1})
         edu_d2(i,1) = 1;
     elseif strcmp(edu{i}, edu_category{2})
@@ -278,7 +278,7 @@ for i = 22:numel(sex)
     else strcmp(edu{i}, edu_category{4})
         edu_d2(i,1) = 4;
     end
-    edu_double = edu_d2
+    education_double = edu_d2
 end
 
 
@@ -291,16 +291,16 @@ for i = 1:20
     subjectdir = fullfile(datdir, filenames{i});
     filelist_sub = dir(string(subjectdir))'; 
     filenames_sub = {filelist_sub.name}' ;
-    x = readtable(fullfile(subjectdir, filenames_sub{8}),'ReadVariableNames',false);
-    age(i) = string(x{1,1});
+    y = readtable(fullfile(subjectdir, filenames_sub{8}),'ReadVariableNames',false);
+    age(i) = string(y{1,1});
 end
     
     for i = 22:50
         subjectdir = fullfile(datdir, filenames{i});
         filelist_sub = dir(string(subjectdir))'; 
         filenames_sub = {filelist_sub.name}' ;
-        x = readtable(fullfile(subjectdir, filenames_sub{8}),'ReadVariableNames',false);
-        age(i) = string(x{1,1});
+        y = readtable(fullfile(subjectdir, filenames_sub{8}),'ReadVariableNames',false);
+        age(i) = string(y{1,1});
     end
         
         for i = 21
@@ -314,64 +314,6 @@ end
 % age cell일 때 314-316
 % age = string(age)
 % age = str2double(age) % 미친 str2num은 셀형 배열 또는 비 스칼라 string형 배열을 변환하지 않으며, + 연산자와 - 연산자 앞뒤의 공백을 무시하지 않습니다
-
-figure;
-counts = 10;
-h = histogram(age, 'NumBins', counts);
-h.BinLimits = [15 40];
-title('distribution of age','FontSize',15)
-xlabel('age','FontSize',15)
-ylabel('counts','FontSize',15)
-text(30, 10, sprintf('mean = %0.2f',mean(age)),'FontSize',15) % percentage with 2 under number after .
-text(30, 9, sprintf('std = %0.2f',std(age)),'FontSize',15) % 30&9 = location
-fullfile(savedir, 'distribution of age.fig')
-saveas(gcf,'distribution of age_dj.pdf')
-
-get(gcf, 'color', 'w') % color랑 position은 있는데 w는 없음
-
-set(gcf)
-get(gcf, 'color', 'w', 'position', []) % 한 개씩 넣어야 돌아감
-
-% get(gcf, 'color')
-% get(gcf, 'position')
-
-% sprintf
-sprintf('mean = %0.2f',mean(age))
-
-% sex
-% sex_d = data.sex_double;
-% x = histcounts(sex_d);
-x = histcounts(sex_double)
-figure;
-c = categorical({'Unknown','Female','Male'});
-b = bar(c, x);
-b.FaceColor = 'flat';
-b.CData(2,:) = [0 .3 .3];
-b.CData(3,:) = [.3 0 .3];
-b.BarWidth = .5;
-text(1, x(2)+1, num2str(x(2)))
-text(2, x(3)+1, num2str(x(3)))
-text(3, x(1)+1, num2str(x(1)))
-title('Female&male','FontSize',15)
-fullfile(savedir, 'Female&m_dj.fig')
-saveas(gcf,'Female&m_dj.png')
-
-%% save
-name = 'dongju';
-savedir = '/Users/dongjupark/Dropbox/summerintern_2020/scripts/Week1';
-savename = fullfile(savedir, sprintf(strcat('age_sex_education_n50_',name)));
-save(savename)
-
-% save(savename, 'data','name'); % 이거 뭐지?
-load(savename)
-
-
-
-
-
-
-
-
 
 figure;
 counts = 10;
@@ -402,7 +344,6 @@ sprintf('mean = %0.2f',mean(age))
 x = histcounts(sex_double)
 figure;
 c = categorical({'Unknown','Female','Male'});
-1:numel(c)
 b = bar(c, x);
 b.FaceColor = 'flat';
 b.CData(2,:) = [0 .3 .3];
@@ -441,12 +382,16 @@ fullfile(savedir, 'dj_Education.fig')
 saveas(gcf,'dj_Education.png')
 
 
+%% save
+name = 'dongju';
+savedir = '/Users/dongjupark/Dropbox/summerintern_2020/scripts/Week1';
+savename = fullfile(savedir, sprintf(strcat('age_sex_education_n50_',name)));
+save(savename)
 
+% save(savename, 'data','name'); % 이거 뭐지?
 
-
-
-
-
+load(savename)
+open('age_sex_education_n50_dongju.mat')
 
 
 %% For the next class (DAY2)
@@ -461,12 +406,13 @@ saveas(gcf,'dj_Education.png')
 % 
 %%%%%%%%% Mission!! %%%%%%%%%%
 % Find histogram, mean, standard deviation for age, sex_double, and
-% education_double.
-% You have to use for loop and if!
+% education_double. 
+% You have to use for loop and if!???????
 %
-%   2-1 sex, education의 제목달기. 'femal' & 'male' 이렇게. 
-%   2-2. 각 범주마다 색을 다르게 넣어보기
-%   2-3. age의 mean과 std를 표 안에 넣을 때 sprintf 를 이용하여 소숫점 2째자리까지만 표현해보기.
+%   2-1 sex, education의 제목달기. 'femal' & 'male' 이렇게. 0
+%   2-2. 각 범주마다 색을 다르게 넣어보기 0
+%   2-3. age의 mean과 std를 표 안에 넣을 때 sprintf 를 이용하여 소숫점 2째자리까지만 표현해보기. 0
 %
-% 3. 이번주까지 만든 변수들을 모아서 structure로 만들어서 mat로 저장하기 (현재 코드 참조)
-% 4. figure도 png와 pdf 파일로 저장해보기. (이건 알아서 찾아보기. 대신 저장할 때 각자의 이름을 파일 이름으로 넣을 것.)
+% 3. 이번주까지 만든 변수들을 모아서 structure로 만들어서 mat로 저장하기 (현재 코드 참조) 0
+% 4. figure도 png와 pdf 파일로 저장해보기. (이건 알아서 찾아보기. 대신 저장할 때 각자의 이름을 파일 이름으로 넣을
+% 것.) 0
