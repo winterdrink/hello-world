@@ -38,7 +38,7 @@ clear Byeol
 % you can clear specific variable(element?? clear Byeol.room1 doesn't work. though clear cell work.) with this. If you put two %, it makes section from there.
 
 % cell example
-subjectdir = fullfile(datdir, '190705_JJW'); % ancient way... :) make JJW in datdir to one file
+%subjectdir = fullfile(datdir, '190705_JJW'); % ancient way... :) make JJW in datdir to one file
 
 %cd .. change your directory to upper one.
 % cd(datdir)
@@ -70,7 +70,7 @@ filelist_sub = dir(subjectdir{1});      % No error, same with dir(string(subject
 % subjectdir, make LEJ's elements a string and dir(open all the under-elements)
 % the elements -> 
 filenames_sub = {dir(string(subjectdir)).name}' % you can use .name for structure's variable
-filenames_sub = {filelist_sub.name}' % filelist_sub = dir(string(subjectdir))
+filenames_sub = {filelist_sub.name}'; % filelist_sub = dir(string(subjectdir))
 
 % wanna pull out first element in LEJ, subjectdir = cell, peel off the cell with {}
 
@@ -165,21 +165,21 @@ s = size(filenames_sub,1); % with ,1, row number
 
 % 뭐해야 하는거지...?
 
-if s == 12
-    for i = 1:10
-        [num{i},txt{i},raw{i}] = xlsread(fullfile(subjectdir, filenames_sub{i+2})); % ratings for each exam
-    end
-elseif s ~= 12
-   for s <
-       [num{i},txt{i},raw{i}] = xlsread(fullfile(subjectdir, filenames_sub{s}));
-           i = 1:10
-         [num{i},txt{i},raw{i}] = xlsread(fullfile(subjectdir, filenames_sub{i+2}));
-   end
-   else s >
+%if s == 12
+ %  for i = 1:10
+  %      [num{i},txt{i},raw{i}] = xlsread(fullfile(subjectdir, filenames_sub{i+2})); % ratings for each exam
+   % end
+%elseif s ~= 12
+ %  for s <
+  %     [num{i},txt{i},raw{i}] = xlsread(fullfile(subjectdir, filenames_sub{s}));
+   %        i = 1:10
+    %     [num{i},txt{i},raw{i}] = xlsread(fullfile(subjectdir, filenames_sub{i+2}));
+  % end
+  % else s >
        
        
-   end
-end
+  % end
+%end
 
 % xlsread는 권장되지 않습니다. 대신 readtable, readmatrix 또는 readcell을 사용하십시오. 자세한 내용은 호환성 관련 고려 사항을 참조하십시오.
 
@@ -189,8 +189,8 @@ num2str(str2num(txt{10}{160,3})+1)  % double > string
 
 % for Mac
 x = readtable(fullfile(subjectdir, filenames_sub{8}),'ReadVariableNames',false); % readtable : 파일에서 열 방향 데이터를 읽어 테이블을 만듭니다.
-y = str2num(string(x{1,1}))
-num2str(y)
+age = str2num(string(x{1,1}))
+num2str(age)
 % y = num2str(y) -> character, y = string(y) -> string
 
 % 
@@ -219,10 +219,6 @@ sex_d2 = zeros(numel(sex),1);
 edu_d2 = zeros(numel(edu),1);
 edu_category = {'고졸', '대학교재학', '대학원재학', '대학원졸업'};
 
-sex = string(x{2,1});
-edu = string(x{3,1});
-age = string(x{1,1});
-
 for i = 1:20
     subjectdir = fullfile(datdir, filenames{i});
     filelist_sub = dir(string(subjectdir))'; 
@@ -238,9 +234,10 @@ for i = 1:20
     else
         warning(sprintf('Dose the subject-%02d have 3rd sex?.',i)) 
     end
+    sex_double = sex_d2
   
     % edu
-    edu{i} = string(x{3,1})
+    edu{i} = string(x{3,1});
     if strcmp(edu{i}, edu_category{1})
         edu_d2(i,1) = 1;
     elseif strcmp(edu{i}, edu_category{2})
@@ -250,12 +247,12 @@ for i = 1:20
     else strcmp(edu{i}, edu_category{4})
         edu_d2(i,1) = 4;
     end
+    edu_double = edu_d2
     end
-    
 
     
 for i = 22:numel(sex)
-   if subjectdir = fullfile(datdir, filenames{i});
+    subjectdir = fullfile(datdir, filenames{i});
     filelist_sub = dir(string(subjectdir))'; 
     filenames_sub = {filelist_sub.name}' ;
     x = readtable(fullfile(subjectdir, filenames_sub{8}),'ReadVariableNames',false);
@@ -268,9 +265,10 @@ for i = 22:numel(sex)
     else
         warning(sprintf('Dose the subject-%02d have 3rd sex?.',i)) 
     end
-        
+    sex_double = sex_d2
+  
     % edu
-    edu{i} = string(x{3,i})
+    edu{i} = string(x{3,1});
     if strcmp(edu{i}, edu_category{1})
         edu_d2(i,1) = 1;
     elseif strcmp(edu{i}, edu_category{2})
@@ -278,23 +276,23 @@ for i = 22:numel(sex)
     elseif strcmp(edu{i}, edu_category{3})
         edu_d2(i,1) = 3;
     else strcmp(edu{i}, edu_category{4})
-        edu_d2(i,1) = 4;   
+        edu_d2(i,1) = 4;
     end
+    edu_double = edu_d2
 end
+
 
 
 %% histogram
 % age
 %  
 
-y = cell(50,1)
-
 for i = 1:20
     subjectdir = fullfile(datdir, filenames{i});
     filelist_sub = dir(string(subjectdir))'; 
     filenames_sub = {filelist_sub.name}' ;
     x = readtable(fullfile(subjectdir, filenames_sub{8}),'ReadVariableNames',false);
-    y{i,1} = string(x{1,1})
+    age(i) = string(x{1,1});
 end
     
     for i = 22:50
@@ -302,20 +300,21 @@ end
         filelist_sub = dir(string(subjectdir))'; 
         filenames_sub = {filelist_sub.name}' ;
         x = readtable(fullfile(subjectdir, filenames_sub{8}),'ReadVariableNames',false);
-        y{i,1} = string(x{1,1})
+        age(i) = string(x{1,1});
     end
         
         for i = 21
-            y{i,1} = "0"
+            age(i) = "0"
         end
-       
+      
     
     s = size(filenames_sub,1);
 
 % age = data.age; % ?
-age = y
-age = string(age)
-age = str2double(age) % 미친 str2num은 셀형 배열 또는 비 스칼라 string형 배열을 변환하지 않으며, + 연산자와 - 연산자 앞뒤의 공백을 무시하지 않습니다
+% age cell일 때 314-316
+% age = string(age)
+% age = str2double(age) % 미친 str2num은 셀형 배열 또는 비 스칼라 string형 배열을 변환하지 않으며, + 연산자와 - 연산자 앞뒤의 공백을 무시하지 않습니다
+
 figure;
 counts = 10;
 h = histogram(age, 'NumBins', counts);
@@ -325,6 +324,9 @@ xlabel('age','FontSize',15)
 ylabel('counts','FontSize',15)
 text(30, 10, sprintf('mean = %0.2f',mean(age)),'FontSize',15) % percentage with 2 under number after .
 text(30, 9, sprintf('std = %0.2f',std(age)),'FontSize',15) % 30&9 = location
+fullfile(savedir, 'distribution of age.fig')
+saveas(gcf,'distribution of age_dj.pdf')
+
 get(gcf, 'color', 'w') % color랑 position은 있는데 w는 없음
 
 set(gcf)
@@ -337,26 +339,113 @@ get(gcf, 'color', 'w', 'position', []) % 한 개씩 넣어야 돌아감
 sprintf('mean = %0.2f',mean(age))
 
 % sex
-sex_d = data.sex_double;
-x = histcounts(sex_d);
+% sex_d = data.sex_double;
+% x = histcounts(sex_d);
+x = histcounts(sex_double)
 figure;
-c = categorical({'Female','Male'});
+c = categorical({'Unknown','Female','Male'});
 b = bar(c, x);
 b.FaceColor = 'flat';
-b.CData(1,:) = [0 .5 .5];
-b.CData(2,:) = [.5 0 .5];
+b.CData(2,:) = [0 .3 .3];
+b.CData(3,:) = [.3 0 .3];
 b.BarWidth = .5;
-text(1, x(1)+1, num2str(x(1)))
-text(2, x(2)+1, num2str(x(2)))
-
-
+text(1, x(2)+1, num2str(x(2)))
+text(2, x(3)+1, num2str(x(3)))
+text(3, x(1)+1, num2str(x(1)))
+title('Female&male','FontSize',15)
+fullfile(savedir, 'Female&m_dj.fig')
+saveas(gcf,'Female&m_dj.png')
 
 %% save
 name = 'dongju';
 savedir = '/Users/dongjupark/Dropbox/summerintern_2020/scripts/Week1';
-savename = fullfile(savedir, sprintf('age_sex_education_n50_%s.mat',name));
-save(savename, 'data','name');
+savename = fullfile(savedir, sprintf(strcat('age_sex_education_n50_',name)));
+save(savename)
+
+% save(savename, 'data','name'); % 이거 뭐지?
 load(savename)
+
+
+
+
+
+
+
+
+
+figure;
+counts = 10;
+h = histogram(age, 'NumBins', counts);
+h.BinLimits = [15 40];
+title('distribution of age','FontSize',15)
+xlabel('age','FontSize',15)
+ylabel('counts','FontSize',15)
+text(30, 10, sprintf('mean = %0.2f',mean(age)),'FontSize',15) % percentage with 2 under number after .
+text(30, 9, sprintf('std = %0.2f',std(age)),'FontSize',15) % 30&9 = location
+fullfile(savedir, 'distribution of age.fig')
+saveas(gcf,'dj_distribution of age.pdf')
+
+get(gcf, 'color', 'w') % color랑 position은 있는데 w는 없음
+
+set(gcf)
+get(gcf, 'color', 'w', 'position', []) % 한 개씩 넣어야 돌아감
+
+% get(gcf, 'color')
+% get(gcf, 'position')
+
+% sprintf
+sprintf('mean = %0.2f',mean(age))
+
+% sex
+% sex_d = data.sex_double;
+% x = histcounts(sex_d);
+x = histcounts(sex_double)
+figure;
+c = categorical({'Unknown','Female','Male'});
+1:numel(c)
+b = bar(c, x);
+b.FaceColor = 'flat';
+b.CData(2,:) = [0 .3 .3];
+b.CData(3,:) = [.3 0 .3];
+b.BarWidth = .5;
+text(1, x(2)+1, num2str(x(2)))
+text(2, x(3)+1, num2str(x(3)))
+text(3, x(1)+1, num2str(x(1)))
+text(2.5, 10, sprintf('mean = %0.2f',mean(sex_double)),'FontSize',10) 
+text(2.5, 11, sprintf('std = %0.2f',std(sex_double)),'FontSize',10)
+title('Female&male','FontSize',15)
+fullfile(savedir, 'dj_Female&m.fig')
+saveas(gcf,'dj_Female&m.png')
+
+
+
+% education
+y = histcounts(education_double)
+figure;
+d = categorical({'고졸', '대학교재학', '대학원재학', '대학원졸업'});
+bb = bar(d, y);
+bb.FaceColor = 'flat';
+bb.CData(2,:) = [0 .5 .5];
+bb.CData(3,:) = [.8 0 .3];
+bb.CData(4,:) = [0 .9 0];
+bb.CData(1,:) = [.2 0 .7];
+bb.BarWidth = .3;
+text(1, y(1)+1, num2str(y(1)))
+text(2, y(2)+1, num2str(y(2)))
+text(3, y(3)+1, num2str(y(3)))
+text(4, y(4)+1, num2str(y(4)))
+text(1, 25, sprintf('mean = %0.2f',mean(education_double)),'FontSize',20) 
+text(1, 22, sprintf('std = %0.2f',std(education_double)),'FontSize',20)
+title('Education','FontSize',15)
+fullfile(savedir, 'dj_Education.fig')
+saveas(gcf,'dj_Education.png')
+
+
+
+
+
+
+
 
 
 
