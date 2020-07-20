@@ -1,0 +1,377 @@
+%% DAY1 : 200716
+
+% addpath, rmpath, savepath, dir, num2cell, cell2mat, isequal, reshape,
+% xlsread, readtable, str2num, num2str
+% histogram, sprintf
+%% addpath
+% There are different data type in Matlab.
+% Single, double, cell, string(character), and structure.
+
+% about the adding path and removing path
+addpath(pwd)
+addpath(genpath(pwd)) 
+rmpath(genpath(pwd)) % remove path
+savepath  % keep the path
+
+datdir = '/Users/dongjupark/Dropbox/summerintern_2020/data/tutorial_data/sess1';
+
+cd '/Users/dongjupark/Dropbox/summerintern_2020/data/tutorial_data/sess1'
+cd(datdir) % 18th = 19th, datdir = variable, you should put it btw () when you use it with function.
+
+%% exercise
+% structure
+Byeol = []; % whos Byeol -> structure/double/cell/
+Byeol.room1 = []; % Make space in Byeol's first room, that makes Byeol to struct
+Byeol.room2 = [];
+Byeol.room1 = 1:10; % Can we do this without cloumn 24th? or is there any different btw this and [1:10]?
+Byeol.room2 = cell(3,5); % room 1 = double, you can see it directly, room2 = cell, you should go in it. Byeol is still a struct with size 1 by 1 -> How come?
+Byeol.room2{2} = cell(3,5); % {2} = (2,1) of 3 by 5, in numerical number.
+Byeol.room2{4} = cell(1,4) % {4} = (1, 2) of 3 by 5
+Byeol.room2{16} = cell(1,4) % there's no 16th in 3 by 5,  Byeol.room2{4,1}=cell(1,4) makes room2 from 3 by 5 to 4 by 5
+Byeol.room1(11) % there's only 10 elements in room1, so cannot find
+Byeol.room1(11) = 11; % Though you can put things in it.
+Byeol.room2{end} = 15; % last element makes 15, in 3 by 5 cell, it's (3,5)
+Byeol.room2{end} % you can see last element with this.
+
+clear Byeol
+
+% you can clear specific variable(element?? clear Byeol.room1 doesn't work. though clear cell work.) with this. If you put two %, it makes section from there.
+
+% cell example
+%subjectdir = fullfile(datdir, '190705_JJW'); % ancient way... :) make JJW in datdir to one file
+
+%cd .. change your directory to upper one.
+% cd(datdir)
+
+filelist = dir(datdir); 
+% dir(datdir) = list all the elements in datdir, but datdir has cells and characters -> dir(datdir) should be struct
+% name(ch), folder(ch), date(ch), bytes(cell), isdir(?), datenum(cell) are included in a struct named filelist, 
+% whos filelist.name doesn't work, how do you see this?
+
+filenames = {filelist.name}'; % name, Character in filelist, make it independent variable.
+% ans = {} {} {} ... if you put ' behind this, {filelist.name}' = column vector of {} = {}; {}; {}; ...
+
+filenames = filenames(3:end)'; 
+% 3-end elements are substracted from variable filenames, first and second are . / .., no need.
+
+size(filenames) % row and column, if you say "size filenames", result would be 1 by 9, f i l e n a m e s 9 characters
+numel(filenames) % number of bigger column/row, numel() = prod(size)?
+whos filenames % cell, 52 by 1 vector
+
+% control z : , control shift z : ,
+% cell type exercise
+
+subjectdir = fullfile(datdir, filenames(1)); % fullfile = make cell?, datdir = became '~' address above. + first element of filenames, '190704LEJ' (after column 54)
+filelist_sub = dir(subjectdir);         % It would make an error. Do you get the reason? dir = listing, need elements to listing, subjectdir = cell, must be a scalar or vector
+filelist_sub = dir(string(subjectdir)); % because the input was a cell, not a string, if you string(subjectdir), it works. here, subjectdir = LEJ
+filelist_sub = dir(subjectdir(1));      % It would make an error. Do you get the reason?
+filelist_sub = dir(subjectdir{1});      % No error, same with dir(string(subjectdir)) 
+
+% subjectdir, make LEJ's elements a string and dir(open all the under-elements)
+% the elements -> 
+filenames_sub = {dir(string(subjectdir)).name}' % you can use .name for structure's variable
+filenames_sub = {filelist_sub.name}'; % filelist_sub = dir(string(subjectdir))
+
+% wanna pull out first element in LEJ, subjectdir = cell, peel off the cell with {}
+
+newcell = filenames(1:5); % 5 by 1 cell, first to fifth elements make column vector
+% newcell = filenames{1:5}; % just first element of the filenames, LEJ
+
+newcell = cell(2,5);
+newcell(1:5) = filenames(1:5);  % not we intend, put elements in row order not column order.
+newcell(1,:) = filenames;       % error, newcell(1,:) = first element only, size(newcell) = 1 by 1, size(filenames) = 50 by 1
+% commend + arrows = move cursor to start and end, option+arrows = move cursor front/backside word by word
+
+newcell = cell(2,5); % you should do this first.
+newcell(1,1:5) = filenames(1:5); % in row order, 04 LEJ, 05 JJW, 08 LYR.... in first row 
+newcell(2,1:5) = filenames(6:10); % in row order, 10 YSY, 11 KDH, ..... in second row
+
+% how to use loop for this?
+newcell = cell(2,5);
+for i = 1:2
+   for j = 1:5
+       newcell(i,j) = filenames((i-1)*5+j, 1)
+   end
+end
+
+% i=1일 때 j=12345 / i=2일 때 j=678910
+
+% you should be careful using () {} with cell variables
+newcell(1,:)
+newcell{1,:}
+
+newcell(1,1:5) = filenames{1:5}; % {}로 하면 결과값이 5개라고 오류 뜸, ()여야 
+sub1_ch = filenames{1}; % {} = charater
+sub1_cell = filenames(1); % () = cell
+whos sub1_ch
+whos sub1_cell
+
+% interchange between cell and double
+b_idx = [1 2 3; 4 5 6; 7 8 9];
+b_idx_cell = num2cell(b_idx); % num2cell = double -> cell 길이가 같으면 왔다갔다 가능
+b_idx_num = cell2mat(b_idx_cell); % cell2mat = cell -> double
+
+new_idx = [4 5 6; 7 8 9; 1 2 3];
+isequal(b_idx([2 3 1],:), new_idx) % make a vector of b_idx's second, third, first rows, not new_indx's, isequal = logical judgement
+new_idx = new_idx(:)'; % new_indx(:) = make a vetor(vectorize) of all the elements of new_indx, with ', it makes a row vector.
+
+y = 1:25;
+reshape(y, 5, 5)'  % all elements in x -> 5 by 5, with ', transposed (1 2 3 4 5)
+% if # of elements are different with matrix num, error
+
+% Let's make this!
+%      0     0     0     0     0
+%      0     1     2     3     0
+%      0     4     5     6     0
+%      0     7     8     9     0
+%      0     0     0     0     0
+
+expand_b = zeros(5,5);
+for i = 1:size(b_idx,1) % size(b_idx,1) = size of b_idx's number of rows(1)
+    for j = 1:size(b_idx,2) % size(b_idx,2) = size of b_idx's number of columns(2)
+        expand_b(i+1,j+1) = b_idx(i,j); % if i = 2:4, b_idx(i-1, j-1)
+    end
+end
+expand_b
+
+%% load data
+% fullfile은 파일에 대한 전체 경로를 포함하는 문자형 벡터를 반환
+subjectdir = fullfile(datdir, filenames(1)); % filenames(1) = {LEJ}, makes subjectdir as a cell, can pull out the first cell from the filenames
+% 원래 이거여서 string 하나하나 했던건데ㅠㅠ
+filelist = dir(datdir);
+filenames = {filelist.name}';
+filenames = filenames(3:end); % we are done with third LEJ, let's start with the forth, JJW
+
+filelist_sub = dir(subjectdir{1});  % = dir(string(subjectdir))
+
+% string, character
+subjectdir = fullfile(datdir, filenames);   % filenames{1} = LEJ, makes subjectdir as a character, should pull out the content of the first cell from the filenames.
+filelist_sub = dir((subjectdir{1}))';     % list all the names of elements in this path(subjectdir)
+filenames_sub = {filelist_sub.name}' % with ', it makes a column vector
+s = size(filenames_sub,1); % with ,1, row number
+
+%     {'.'                       }
+%     {'..'                      }
+%     {'BFI-10.xlsx'             }
+%     {'CESD.xlsx'               }
+%     {'KRRS.xlsx'               }
+%     {'PANAS.xlsx'              }
+%     {'STAI_T.xlsx'             }
+%     {'personal_info.xlsx'      }  >>> what we need % filenames_sub =
+%     cell, filenames_sub{8} = 'personal_ info.xlsx'
+%     {'suicide.xlsx'            }
+%     {'survey_score.xlsx'       }
+%     {'total_cost_times.xlsx'   }
+%     {'wordset_with_rating.xlsx'}
+
+% 뭐해야 하는거지...?
+
+if s == 12
+  for i = 1:10
+       [num{i},txt{i},raw{i}] = xlsread(fullfile(subjectdir{1}, filenames_sub{i+2})); 
+  end
+elseif s ~= 12
+       warning('information incorrect') % warning : 끝까지 돌아감, error : 끝까지 안 돌아감
+end
+
+% ratings for each exam, to read a excel xls file, just xlsread = num, [num, txt, raw], [~, txt, raw], [~, ~, raw], () 썼으니 cell, raw = num or txt everything
+
+
+str2num(txt{10}{160,3})+1           % string > double
+num2str(str2num(txt{10}{160,3})+1)  % double > string
+
+% for Mac
+y = readtable(fullfile(subjectdir{1}, filenames_sub{8}),'ReadVariableNames',false); % readtable : 파일에서 열 방향 데이터를 읽어 테이블을 만듭니다.
+age = str2num(string(y{1,1}))
+num2str(age)
+% y = num2str(y) -> character, y = string(y) -> string
+
+% 
+
+% 'ReadVariablenames', false 지우면
+% 경고: 테이블에 대한 변수 이름을 생성하기 전에 파일의 열 제목이 유효한 MATLAB 식별자가 되도록 수정되었습니다. 원래 열 제목은
+% VariableDescriptions 속성에 저장되어 있습니다.
+% 원래 열 제목을 테이블 변수 이름으로 사용하려면 'PreserveVariableNames'를 true로 설정하십시오. 
+% false로 하면 앞에 내가 변수 이름 새로 설정하는거고, true로 하면 그대로 받는건가?
+% 근데 얘가 matlab에서는 변수로 안나오는데 왜 설정하는거지?
+
+clear num txt raw
+
+
+%%
+basedir = '/Users/dongjupark/Dropbox/summerintern_2020/scripts/Week1';
+dataname = fullfile(basedir, 'age_sex_education_n50_dongju.mat');
+load(dataname) % x = load(dataname)
+
+subject_num = 50;
+subject_num = numel(filenames);
+
+% preallocation % 미리 해두면 부담이 적다!
+age = zeros(subject_num,1);
+sex = cell(subject_num,1);
+edu = cell(subject_num,1);
+
+% preallocation
+sex_d2 = zeros(numel(sex),1);
+edu_d2 = zeros(numel(edu),1);
+edu_category = {'고졸', '대학교재학', '대학원재학', '대학원졸업'};
+
+% commend + i : auto 들여쓰
+
+for i = 1:numel(sex)
+    subjectdir = fullfile(datdir, filenames{i});
+    filelist_sub = dir(string(subjectdir))';
+    filenames_sub = {filelist_sub.name}' ;
+    y = readtable(fullfile(subjectdir, filenames_sub{8}),'ReadVariableNames',false);
+    sex{i,1} = string(y{2,1})
+    edu{i,1} = string(y{3,1})
+    % sex 
+    if strcmp(sex{i}, 'Female')
+        sex_d2(i,1) = 1;
+    elseif strcmp(sex{i}, 'Male')
+        sex_d2(i,1) = 2;
+    else
+        warning(sprintf('Dose the subject-%02d have 3rd sex?.',i)) 
+    end
+    sex_double = sex_d2
+  
+    % edu
+    edu{i} = string(y{3,1});
+    if strcmp(edu{i}, edu_category{1})
+        edu_d2(i,1) = 1;
+    elseif strcmp(edu{i}, edu_category{2})
+        edu_d2(i,1) = 2;
+    elseif strcmp(edu{i}, edu_category{3})
+        edu_d2(i,1) = 3;
+    elseif strcmp(edu{i}, edu_category{4})
+        edu_d2(i,1) = 4;
+    end
+    edu_double = edu_d2
+    end
+
+
+
+%% histogram
+% age
+%  
+
+for i = 1:numel(age)
+    subjectdir = fullfile(datdir, filenames{i});
+    filelist_sub = dir(string(subjectdir))'; 
+    filenames_sub = {filelist_sub.name}' ;
+    y = readtable(fullfile(subjectdir, filenames_sub{8}),'ReadVariableNames',false);
+    age(i) = string(y{1,1});
+end
+    
+      
+    
+    s = size(filenames_sub,1);
+
+% age = data.age; % ?
+% age cell일 때 314-316
+% age = string(age)
+% age = str2double(age) % 미친 str2num은 셀형 배열 또는 비 스칼라 string형 배열을 변환하지 않으며, + 연산자와 - 연산자 앞뒤의 공백을 무시하지 않습니다
+
+figure;
+counts = 10; % number of bars
+h = histogram(age, 'NumBins', counts); % h -> show you all the handles, features
+h.BinLimits = [15 40]; % start and end of bars in x asis
+% h = histogram(age, 'NumBins', counts, 'Binlimits', [15 40]); all in one!
+h.parent.YLim = [0 20] % y axis change!
+title('distribution of age','FontSize',15)
+xlabel('age','FontSize',15)
+ylabel('counts','FontSize',15)
+text(30, 10, sprintf('mean = %0.2f',mean(age)),'FontSize',15) % percentage with 2 under number after .
+text(30, 9, sprintf('std = %0.2f',std(age)),'FontSize',15) % 30&9 = location
+fullfile(savedir, 'distribution of age.fig')
+saveas(gcf,'dj_distribution of age.pdf')
+
+set(gcf, 'color', 'w') % not get, set first!
+get(gcf) % gcf = the very first figure that is open now, background of figure, out of axises
+set(gcf, 'color', 'w', 'position', [680 385 560 420]) 
+% figure 비율 조절한 다음 gcf로 position confirm, [전체 화면 왼쪽 아래 시작점의 x 좌표, 왼쪽 아래 y 좌표, 가로 창의 크기, 세로 창의 크기]에 넣으면 끝
+% gcf, 'color', 'w' : white, 'color', 'r' : red, 'color', 'b' : blue etc.
+
+% get(gcf, 'color')
+% get(gcf, 'position')
+
+% sprintf
+sprintf('mean = %0.2f',mean(age))
+
+% sex
+% sex_d = data.sex_double;
+% x = histcounts(sex_d);
+x = histcounts(sex_double) % histcounts : counts number of each variables 
+figure;
+c = categorical({'Female','Male'});
+b = bar(c, x);
+b.FaceColor = 'flat'; % changing colors of each bars is possible with this 'flat'
+b.CData(1,:) = [0 .3 .3];
+b.CData(2,:) = [.3 0 .3];
+b.BarWidth = .5;
+text(1, x(1)+1, num2str(x(1)))
+text(2, x(2)+1, num2str(x(2)))
+text(1.3, 10, sprintf('mean = %0.2f',mean(sex_double)),'FontSize',10) 
+text(1.3, 11, sprintf('std = %0.2f',std(sex_double)),'FontSize',10)
+title('Female&male','FontSize',15)
+fullfile(savedir, 'dj_Female&m.fig')
+saveas(gcf,'dj_Female&m.png')
+
+
+
+% education
+y = histcounts(education_double)
+figure;
+d = categorical({'고졸', '대학교재학', '대학원재학', '대학원졸업'});
+bb = bar(d, y);
+bb.FaceColor = 'flat';
+bb.CData(2,:) = [0 .5 .5];
+bb.CData(3,:) = [.8 0 .3];
+bb.CData(4,:) = [0 .9 0];
+bb.CData(1,:) = [.2 0 .7];
+bb.BarWidth = .3;
+text(1, y(1)+1, num2str(y(1)))
+text(2, y(2)+1, num2str(y(2)))
+text(3, y(3)+1, num2str(y(3)))
+text(4, y(4)+1, num2str(y(4)))
+text(1, 25, sprintf('mean = %0.2f',mean(education_double)),'FontSize',20) 
+text(1, 22, sprintf('std = %0.2f',std(education_double)),'FontSize',20)
+title('Education','FontSize',15)
+fullfile(savedir, 'dj_Education.fig')
+saveas(gcf,'dj_Education.png')
+
+
+%% save
+name = 'dongju';
+savedir = '/Users/dongjupark/Dropbox/summerintern_2020/scripts/Week1';
+savename = fullfile(savedir, sprintf(strcat('age_sex_education_n50_',name)));
+save(savename)
+
+% save(savename, 'data','name'); % 이거 뭐지?
+
+load(savename)
+open('age_sex_education_n50_dongju.mat')
+
+
+%% For the next class (DAY2)
+% Let's find out the distribution of age, sex, and education level of 50
+% subjects.
+% 
+% age : 50x1 double
+% sex : 50x1 cell (inside string)
+% sex_double : 50x1 double
+% education : 50x1 cell
+% education_double : 50x1 double
+% 
+%%%%%%%%% Mission!! %%%%%%%%%%
+% Find histogram, mean, standard deviation for age, sex_double, and
+% education_double. 
+% You have to use for loop and if!???????
+%
+%   2-1 sex, education의 제목달기. 'femal' & 'male' 이렇게. 0
+%   2-2. 각 범주마다 색을 다르게 넣어보기 0
+%   2-3. age의 mean과 std를 표 안에 넣을 때 sprintf 를 이용하여 소숫점 2째자리까지만 표현해보기. 0
+%
+% 3. 이번주까지 만든 변수들을 모아서 structure로 만들어서 mat로 저장하기 (현재 코드 참조) 0
+% 4. figure도 png와 pdf 파일로 저장해보기. (이건 알아서 찾아보기. 대신 저장할 때 각자의 이름을 파일 이름으로 넣을
+% 것.) 0
