@@ -1,0 +1,155 @@
+% make 'fast_bodymap.mat' - B
+% revise 181017
+
+%% Original of body map 
+datadir = '/Users/dongjupark/Dropbox/summerintern_2020/data';
+bodymap = imread(fullfile(datadir, 'bodymap_screenshot.png'));    % screenshot of the real survey screen
+% size 1080x1920x3
+% rgb 3개?
+imagesc(bodymap);
+
+bodymap = bodymap(:,:,1); % 3번째 차원에서 하나만 쓰겠다는 것 1, 여기서 whos bodymap 하면 1080x    1920
+bodymap([1:262 907:1080], :) = []; % (머리 바로 위까지 지움 + 발끝까지 다 지움)
+bodymap(:, [1:1534 1751:1920]) = []; % % (가로로, 즉 팔 직전까지 자른 것) bodymap = 644 X 216 -> input 받을 구역만
+% body_white is the coordinate set of inner body,  
+[body_white(:,1), body_white(:,2)] = find(bodymap(:,:,1) == 255); % 
+% body_white(:,1) = x, (:,2) = y, colorbar 만들어보면, 255 색(white)인 부분이 있을 것, 이 부분을 찾는 index
+% body_white_binary is made by just 0, 1 in 644 X 216 matrix
+% colorbar가 1-0이 됨
+% The pixel of inner body is 1, otherwise 0.
+body_white_binary = double(bodymap==255); % 로지컬로 저장
+
+%% Load Data
+
+B = [];
+B.bodymap = bodymap;
+B.bodymap_binary = body_white_binary;
+%b = cell(93,3); % b = 93x3 cell
+
+j = 0;
+for subject_i = 1:8 % 8명 것 preprocessing 해보
+    j=j+1;
+    
+    % load survey data of one subject    
+    O = load(fullfile(datadir,sprintf('d_surveydata_subF%03d.mat', subject_i)));
+    original = O.survey.dat; % O.survey.words -> 무슨 말 했었는지 다 볼 수 있, O.survey.dat{1,1}{1} = self, etc O.survey.dat{1,1}{6} = 이게 바디맵, 레드가 비어있는건 이 단어에 대해 레드 안 칠한  
+    original = reshape(original, [160,1]); %40*4인 original을 160 by 1으로 깔끔하게 reshape
+    
+    whos original % 1 by 160으로
+    original{1}{6} % 첫번째 중괄호는 trial, 두번째 6은 bodymap이니까 고정
+    
+    b{j,1} = sprintf('subF%03d.mat', subject_i); % the first column of B is subnum
+    % B{j,2} & B{j,3} = 160 x 2 cell
+    b{j,2} = cell(160,2);   % the first column of B{j,2} is for red. 160*2 cell에서 1이 red
+                            % the second column of B{j,2} is for blue. 2가
+                            % blue, 딱 띄웠을 때 보여줬으면 좋겠는데 좌표로 보여주는 struct
+                            % O.survey.dat{}{}
+                            % 색마다 index 다르게 해서 b 3에 넣는 것
+    b{j,3} = cell(160,2);                         
+    for i = 1:160
+        b{j,2}{i,1}=original{i,1}{1,6}.rating_red; %열이 1일 때 
+        b{j,2}{i,2}=original{i,1}{1,6}.rating_blue; %열이 2일 때 
+    end
+    % 참가자별로 돌아가는 J, i 160개 돌아
+    
+    % Subtract empty area, x-1534, y-262, 
+    for i=1:160
+        if ~isempty(b{j,2}{i,1})    % {j,2} = j번째 참가자의 raw data, rating red, 비어 있는지 아닌지 확인, 비어 있지 않으면 아래에 있는 것 해라!
+            b{j,2}{i,1}(:,3) = b{j,2}{i,1}(:,1); % 각각은 160*2, red와 blue 각각 한 열씩, 두 열 중에 첫번째 열을 세번째에 넣고 첫번째 열을 지워서 첫번째 - 두번째 열을 바꿈
+            b{j,2}{i,1}(:,1) = []; % 첫번째 행 지움, 그 참가자의 그 trial만 세로 가로 바꿔줘, 바꿔놔야 첫번째 열이 세로, 두번째가 가로가 됨
+            
+            b{j,2}{i,1}(:,1) = b{j,2}{i,1}(:,1)-262;    % y-axis, 1열, 머리 위로 영역 빼고 흰 박스의 시작점을 원점으로 만들고 싶음
+            b{j,2}{i,1}(:,2) = b{j,2}{i,1}(:,2)-1534;   % x-axis, 2열, 화면이 가로로 기니까 보통 더 김, 이미 있는 원점을 이동시키는 게 아니라 이미 알고 있는 262, 1534 자리를 원점으로 만드는 거니까 빼기!
+        end
+        % 돌리면 천 얼마였던 좌표가 100 이하로 줄어듦, 원본 데이터를 바꿔주는 것, 이걸로 마스킹해줌, 템플릿
+        if ~isempty(b{j,2}{i,2})    % rating blue
+        % 이게 숙제~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        end
+    end
+    
+    % round up to integer % 정수 만들기, 반올림
+    for i =1:160
+        b{j,2}{i,1} = round(b{j,2}{i,1});
+        b{j,2}{i,2} = round(b{j,2}{i,2});
+    end
+    
+%     % B{j,3} = 160 x 2 cell % 
+%     for i = 1:160
+%         b{j,3}{i,1} = zeros(644,216);     % 644 x 216 
+%         b{j,3}{i,2} = zeros(644,216);     % 644 x 216
+%     end
+% 
+%     for i = 1:160
+%         if ~isempty(b{j,2}{i,1})    % rating red
+%             for m = 1:size(b{j,2}{i,1},1)
+%                 if b{j,2}{i,1}(m,1)>0 && b{j,2}{i,1}(m,2)>0 && b{j,2}{i,1}(m,1)<644 && b{j,2}{i,1}(m,2)<216
+%                     b{j,3}{i,1}(b{j,2}{i,1}(m,1), b{j,2}{i,1}(m,2)) = 1;
+%                 end
+%             end
+%         end
+%         
+%         if ~isempty(b{j,2}{i,2})    % rating blue
+%             %숙제~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+%             %윗부분은 red, 이부분 blue, 뭐에 뭐가 들어갔는지 잘 공부해 볼 것
+%             %정리한 스크립트 만들 
+%         end
+%     end
+%     
+% end
+
+B.data = b;
+
+% commend + / = 주석처리, commend + t = 주석해제
+% 저번 것 코드 정리 ver2
+% 이것도 만들어서 코드 정리 ver2
+
+name = 'dongju'
+savedir = 'Users/dongjupark/Dropbox/summ'
+%%%%%saveas
+
+%% FIGURE
+body_data = -b{1, 3}{41, 2};
+clim = max([max(max(body_data)) abs(min(min(body_data)))]);
+imagesc(body_data, [-clim clim]);
+c = [33,102,172;103,169,207;209,229,240;247,247,247;...
+    253,219,199;239,138,98;178,24,43]/256;
+colormap(c);
+colorbar
+
+x = size(c,1);
+imagesc(1:x)
+colormap(c)
+
+
+% Iblur = imgaussfilt(b{1, 3}{41, 2}, 2);
+% imagesc(Iblur)
+% colorbar
+% 
+% imagesc(imgaussfilt(b{1, 3}{41, 2}, 2)>.002)
+% 
+% 
+% colormap(gray)
+% 
+% temp = temp.*body_white_binary;
+
+
+%% SAVE
+% cd '/Users/byeoletoile/CloudStation/Project/data'
+% save Body_coordinate.mat B
+% save Body_binary.mat B
+
+% save('fast_bodymap.mat','B','-v7.3')
+
+%% checking the size of B
+check = [];
+for j = 1:size(b,1)
+    for i = 1:160
+        if size(b{j,3}{i,1},1) ~= 644 || size(b{j,3}{i,1},2) ~= 216
+            check = [check; j, i, 1];
+        end
+        
+        if size(b{j,3}{i,2},1) ~= 644 || size(b{j,3}{i,2},2) ~= 216
+            check = [check; j, i, 2];
+        end
+    end
+end
