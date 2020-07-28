@@ -48,11 +48,12 @@ filelist = dir(datdir);
 % name(ch), folder(ch), date(ch), bytes(cell), isdir(?), datenum(cell) are included in a struct named filelist, 
 % whos filelist.name doesn't work, how do you see this?
 
-filenames = {filelist.name}'; % name, Character in filelist, make it independent variable.
+filenames = {filelist.name}; % name, Character in filelist, make it independent variable.
 % ans = {} {} {} ... if you put ' behind this, {filelist.name}' = column vector of {} = {}; {}; {}; ...
 
 filenames = filenames(3:end)'; 
 % 3-end elements are substracted from variable filenames, first and second are . / .., no need.
+% 둘 중 하나에만 '
 
 size(filenames) % row and column, if you say "size filenames", result would be 1 by 9, f i l e n a m e s 9 characters
 numel(filenames) % number of bigger column/row, numel() = prod(size)?
@@ -62,10 +63,11 @@ whos filenames % cell, 52 by 1 vector
 % cell type exercise
 
 subjectdir = fullfile(datdir, filenames(1)); % fullfile = make cell?, datdir = became '~' address above. + first element of filenames, '190704LEJ' (after column 54)
-filelist_sub = dir(subjectdir);         % It would make an error. Do you get the reason? dir = listing, need elements to listing, subjectdir = cell, must be a scalar or vector
+%filelist_sub = dir(subjectdir);         % It would make an error. Do you get the reason? dir = listing, need elements to listing, subjectdir = cell, must be a scalar or vector
 filelist_sub = dir(string(subjectdir)); % because the input was a cell, not a string, if you string(subjectdir), it works. here, subjectdir = LEJ
-filelist_sub = dir(subjectdir(1));      % It would make an error. Do you get the reason?
+%filelist_sub = dir(subjectdir(1));      % It would make an error. Do you get the reason?
 filelist_sub = dir(subjectdir{1});      % No error, same with dir(string(subjectdir)) 
+% 위 3개 모두 같음
 
 % subjectdir, make LEJ's elements a string and dir(open all the under-elements)
 % the elements -> 
@@ -97,13 +99,13 @@ end
 % i=1일 때 j=12345 / i=2일 때 j=678910
 
 % you should be careful using () {} with cell variables
-newcell(1,:)
-newcell{1,:}
+newcell(1,:) % 1 by 5 cell로 배열
+newcell{1,:} % 첫줄 요소들을 하나씩 배
 
 newcell(1,1:5) = filenames{1:5}; % {}로 하면 결과값이 5개라고 오류 뜸, ()여야 
 sub1_ch = filenames{1}; % {} = charater
 sub1_cell = filenames(1); % () = cell
-whos sub1_ch
+whos sub1_ch열
 whos sub1_cell
 
 % interchange between cell and double
@@ -274,10 +276,11 @@ end
 
 figure;
 counts = 10; % number of bars
-h = histogram(age, 'NumBins', counts); % h -> show you all the handles, features
+h = histogram(age, 'NumBins', counts); % h -> show you all the handles, features, Numbins -> # of bars
 h.BinLimits = [15 40]; % start and end of bars in x asis
-% h = histogram(age, 'NumBins', counts, 'Binlimits', [15 40]); all in one!
-h.parent.YLim = [0 20] % y axis change!
+% h = histogram(age, 'NumBins', counts, 'Binlimits', [15 40]); all in one!,
+% 여기서는 Numbins, 즉 bar 갯수가 10개, 위에서처럼 순서대로 하면 20개
+h.Parent.YLim = [0 20] % y axis change!
 title('distribution of age','FontSize',15)
 xlabel('age','FontSize',15)
 ylabel('counts','FontSize',15)
