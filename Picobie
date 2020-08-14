@@ -1,0 +1,284 @@
+% make 'pico_bodymap.mat' - B
+
+%% Original of body map 
+datadir = '/Users/dongju/Downloads/summerintern_2020/data';
+bodymap = imread(fullfile(datadir, 'bodymap_screenshot.png'));    % screenshot of the real survey screen
+% bodymap = imread(fullfile(datadir, 'bodymap_pico_1920_1080.png'));    % screenshot of the real survey screen
+% bodymap = imread(fullfile(datadir, 'bodymap_pico_1600_900.png'));    % screenshot of the real survey screen
+imagesc(bodymap);
+
+bodymap = bodymap(:,:,1);
+bodymap([1:262 907:1080], :) = [];
+bodymap(:, [1:1534 1751:1920]) = []; % bodymap = 644 X 216
+body_white_binary = imresize(bodymap==255, 900/1080, 'nearest');
+bodymap = imresize(bodymap, 900/1080, 'nearest');
+% interpolation, fill the gaps btw datas in dot form so that they become
+% linear. Kind of like smoothing
+
+figure; imagesc(body_white_binary)
+
+screen_sz = [900 1600];
+cut_edge = [262/1080 907/1080 1534/1920 1751/1920] .* reshape(repmat(screen_sz,2,1),1,4);
+cut_edge = round(cut_edge);
+% repmat : receive screen_sz as a input, aline it into 2 by 1 matrix
+
+% bodymap = bodymap(1:screen_sz(1),1:screen_sz(2),1);
+% bodymap([1:cut_edge(1) cut_edge(2):end], :) = [];
+% bodymap(:, [1:cut_edge(3) cut_edge(4):end]) = []; % bodymap = 644 X 216
+% [body_white(:,1), body_white(:,2)] = find(bodymap(:,:,1) == 255);
+% body_white_binary = double(bodymap==255);
+imagesc(bodymap)
+
+%% Load Data
+filenames = dir(fullfile(datadir, 'pico_bodymap'));
+filenames = {filenames.name};
+subjectdir = filenames(contains(filenames','surveydata'))';
+% filename Áß surverydata Æ÷ÇÔµÈ °Í¸¸ ÀÌ¸§ º¸¿©Áà
+% containsÀÇ °á°ú°¡ logical, sum(contains(filenames','surveydata'))
+
+B = []; b = [];
+B.bodymap = bodymap;
+B.bodymap_binary = body_white_binary;
+trials_num = 42;
+
+W = [];
+w = [];
+
+ratings = cell(1,5); % valence, self, time, vividness, safety-threat
+for dim_i = 1:5
+    ratings{dim_i} = zeros(trials_num,numel(subjectdir));
+end
+words = cell(trials_num, numel(subjectdir));
+
+j = 0;
+for subject_i = 1:numel(subjectdir)
+    
+    fprintf('\n>>> working on sub_%02d >>>', subject_i)
+    j=j+1;
+    
+    % load survey data of one subject    
+    O = load(fullfile(datadir, 'pico_bodymap', subjectdir{subject_i}));
+    original = O.survey.dat;
+    original = reshape(original, trials_num, 1);
+    
+    % ratings
+    for dim_i = 1:5
+        for trial_i = 1:trials_num
+            ratings{dim_i}(trial_i,j) = original{trial_i}{dim_i}.rating;
+        end
+    end
+    
+    % words
+    original_word = O.survey.words;
+    original_word = reshape(original_word, trials_num, 1);
+    
+    for trial_i = 1:trials_num
+    words{trial_i, subject_i} = original_word{trial_i};
+    end
+    
+    % word - related with safety-threat 
+    w{j, 1} = subjectdir{subject_i};
+    w{j, 2} = cell(trials_num,2);
+    dim_st = ratings{1,5};
+    
+    for trial_i2 = 1:trials_num
+        w{j,2}{trial_i2,1} = words{trial_i2, subject_i};
+        w{j,2}{trial_i2,2} = dim_st(trial_i2, subject_i);
+    end
+    
+    b{j,1} = subjectdir{subject_i}; % the first column of B is subnum
+    % B{j,2} & B{j,3} = 42 x 2 cell
+    b{j,2} = cell(trials_num,2);    % the first column of B{j,2} is for red.
+                                    % the second column of B{j,2} is for blue.
+    b{j,3} = cell(trials_num,2);                         
+    for i = 1:trials_num
+        b{j,2}{i,1} = original{i,1}{1,6}.rating_red;
+        b{j,2}{i,2} = original{i,1}{1,6}.rating_blue;
+    end
+    
+    % Subtract empty area, x-1534, y-262
+    for i=1:trials_num
+        if ~isempty(b{j,2}{i,1})    % rating red
+            b{j,2}{i,1}(:,3) = b{j,2}{i,1}(:,1);
+            b{j,2}{i,1}(:,1) = [];
+            
+            b{j,2}{i,1}(:,1) = b{j,2}{i,1}(:,1)-cut_edge(1);    % y-axis, length
+            b{j,2}{i,1}(:,2) = b{j,2}{i,1}(:,2)-cut_edge(3);   % x-axis, width
+        end
+        
+        if ~isempty(b{j,2}{i,2})    % rating blue
+            b{j,2}{i,2}(:,3) = b{j,2}{i,2}(:,1);
+            b{j,2}{i,2}(:,1) = [];
+            
+            b{j,2}{i,2}(:,1) = b{j,2}{i,2}(:,1)-cut_edge(1);    % y-axis
+            b{j,2}{i,2}(:,2) = b{j,2}{i,2}(:,2)-cut_edge(3);   % x-axis
+        end
+    end
+    
+    % round up to integer
+    for i =1:trials_num
+        b{j,2}{i,1} = round(b{j,2}{i,1});
+        b{j,2}{i,2} = round(b{j,2}{i,2});
+    end
+    
+    % B{j,3} = 42 x 2 cell
+    for i = 1:trials_num
+        b{j,3}{i,1} = zeros(size(body_white_binary));     % 644 x 216 
+        b{j,3}{i,2} = zeros(size(body_white_binary));     % 644 x 216
+    end
+
+    for i = 1:trials_num
+        if ~isempty(b{j,2}{i,1})    % rating red
+            for m = 1:size(b{j,2}{i,1},1)
+                if b{j,2}{i,1}(m,1)>0 && b{j,2}{i,1}(m,2)>0 && b{j,2}{i,1}(m,1)<size(body_white_binary,1) && b{j,2}{i,1}(m,2)<size(body_white_binary,2)
+                    b{j,3}{i,1}(b{j,2}{i,1}(m,1), b{j,2}{i,1}(m,2)) = 1;
+                end
+            end
+        end
+        
+        if ~isempty(b{j,2}{i,2})    % rating blue
+            for m = 1:size(b{j,2}{i,2},1)
+                if b{j,2}{i,2}(m,1)>0 && b{j,2}{i,2}(m,2)>0 && b{j,2}{i,2}(m,1)<size(body_white_binary,1) && b{j,2}{i,2}(m,2)<size(body_white_binary,2)
+                    b{j,3}{i,2}(b{j,2}{i,2}(m,1), b{j,2}{i,2}(m,2)) = 1;
+                end
+            end
+        end
+    end
+end
+
+
+B.data = b;
+savedir = '/Users/dongju/Downloads/summerintern_2020/scripts/Week4';
+savename = fullfile(savedir, 'pico_body_dongju.mat');
+save(savename, 'B', '-v7.3');
+
+subject_id = b(:,1);
+body_dat = b(:,3);
+ratings_descript = {'valence', 'self', 'time', 'vividness', 'safety-threat'};
+savename = fullfile(savedir, 'pico_dat_dongju.mat');
+save(savename, 'subject_id', 'body_dat','ratings', 'ratings_descript', '-v7.3');
+save(savename, 'ratings_descript', '-append');
+save(savename, 'body_white_binary', '-append');
+
+W.data = w;
+
+
+
+%% safety&threat max/min words
+
+st_word = [];
+submax_st = max(dim_st, [], 1); % individual max rating()
+figure;
+histogram(submax_st);
+
+for subject_i2 = 1: subject_i
+    notmax = 0;
+    for trial_i3 = 1:trials_num
+        if isequal(w{subject_i2,2}{trial_i3,2}, submax_st(1,subject_i2))
+            st_word{subject_i2,1}{trial_i3-notmax, 1} = w{subject_i2,2}{trial_i3,1};
+        else notmax = 1+notmax;
+        end
+    end
+                         fprintf('\n>>> working on sub_%02d >>>', subject_i2)
+                         notmax;
+end
+
+
+submin_st = min(dim_st, [], 1); % individual min rating
+figure;
+histogram(submin_st);
+
+for subject_i2 = 1: subject_i
+    notmin = 0;
+    for trial_i3 = 1:trials_num
+        if isequal(w{subject_i2,2}{trial_i3,2}, submin_st(1,subject_i2));
+            st_word{subject_i2,2}{trial_i3-notmin, 1} = w{subject_i2,2}{trial_i3,1};
+        else notmin = 1+notmin;
+        end
+    end
+                         fprintf('\n>>> working on sub_%02d >>>', subject_i2)
+                         notmin;
+end
+
+
+savename = fullfile(savedir, 'pico_word_dongju.mat');
+save(savename, 'words', 'W', 'st_word');
+
+
+%% Safety&threat max/min bodymap
+
+for subject_i2 = 1: subject_i
+    notmax = 0;
+    for trial_i3 = 1:trials_num
+        if isequal(w{subject_i2,2}{trial_i3,2}, submax_st(1,subject_i2))
+            st_body{subject_i2,1}{trial_i3-notmax, 1} = b{subject_i2,2}{trial_i3,1};
+            st_body{subject_i2,2}{trial_i3-notmax, 1} = b{subject_i2,2}{trial_i3,2};
+            %st_body's single maps red +, blue - on zeros(bodymapsize)
+        else notmax = notmax+1;
+        end
+    end
+                         fprintf('\n>>> working on sub_%02d >>>', subject_i2)
+end
+
+for subject_i2 = 1: subject_i
+    notmin = 0;
+    for trial_i3 = 1:trials_num
+        if isequal(w{subject_i2,2}{trial_i3,2}, submax_st(1,subject_i2))
+            st_body{subject_i2,1}{trial_i3-notmax, 1} = b{subject_i2,2}{trial_i3,1};
+            st_body{subject_i2,2}{trial_i3-notmax, 1} = b{subject_i2,2}{trial_i3,2};
+        else notmax = notmax+1;
+        end
+    end
+                         fprintf('\n>>> working on sub_%02d >>>', subject_i2)
+end
+
+
+
+%% FIGURE : Accumulate
+temp = [];
+z = 1;
+for i = 1:46
+    for j = 1:42
+        temp{1}(:,:,z) = b{i,3}{j,1};
+        temp{2}(:,:,z) = b{i,3}{j,2};
+        z = z+1;
+    end
+end
+
+% red accumulate
+body_data = sum(temp{1},3);
+clim = max([max(max(body_data)) abs(min(min(body_data)))]);
+body_data = body_data + clim * double(bodymap==0); 
+figure;
+imagesc(body_data, [-clim clim]);
+c = [33,102,172;103,169,207;209,229,240;247,247,247;...
+    253,219,199;239,138,98;178,24,43]/255;
+colormap(c);
+colorbar
+set(gcf, 'position', [721 119 247 506], 'color', 'w');
+
+% blue accumulate
+body_data = -sum(temp{2},3);
+clim = max([max(max(body_data)) abs(min(min(body_data)))]);
+body_data = body_data + clim * double(bodymap==0); 
+figure;
+imagesc(body_data, [-clim clim]);
+c = [33,102,172;103,169,207;209,229,240;247,247,247;...
+    253,219,199;239,138,98;178,24,43]/255;
+colormap(c);
+colorbar
+set(gcf, 'position', [721 119 247 506], 'color', 'w');
+
+
+%% example
+subj_i = 1;
+trial_i = 20;
+body_data = b{subj_i,3}{trial_i,1} + double(bodymap==0) - b{subj_i,3}{trial_i,2};
+clim = max([max(max(body_data)) abs(min(min(body_data)))]);
+figure;
+imagesc(body_data, [-clim clim]);
+c = [33,102,172;103,169,207;209,229,240;247,247,247;...
+    253,219,199;239,138,98;178,24,43]/255;
+colormap(c);
+colorbar
+set(gcf, 'position', [721 119 247 506], 'color', 'w');
