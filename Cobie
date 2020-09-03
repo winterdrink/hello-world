@@ -1,184 +1,414 @@
-% make 'pico_bodymap.mat' - B
 
-%% Original of body map 
+%% directory setup
+clear
 datadir = '/Users/byeolkim/Dropbox/summerintern_2020/data';
-bodymap = imread(fullfile(datadir, 'bodymap_screenshot.png'));    % screenshot of the real survey screen
-% bodymap = imread(fullfile(datadir, 'bodymap_pico_1920_1080.png'));    % screenshot of the real survey screen
-% bodymap = imread(fullfile(datadir, 'bodymap_pico_1600_900.png'));    % screenshot of the real survey screen
-imagesc(bodymap);
-
-bodymap = bodymap(:,:,1);
-bodymap([1:262 907:1080], :) = [];
-bodymap(:, [1:1534 1751:1920]) = []; % bodymap = 644 X 216
-body_white_binary = imresize(bodymap==255, 900/1080, 'nearest');
-bodymap = imresize(bodymap, 900/1080, 'nearest');
-
-figure; imagesc(body_white_binary)
-
-screen_sz = [900 1600];
-cut_edge = [262/1080 907/1080 1534/1920 1751/1920] .* reshape(repmat(screen_sz,2,1),1,4);
-cut_edge = round(cut_edge);
-% 
-% bodymap = bodymap(1:screen_sz(1),1:screen_sz(2),1);
-% bodymap([1:cut_edge(1) cut_edge(2):end], :) = [];
-% bodymap(:, [1:cut_edge(3) cut_edge(4):end]) = []; % bodymap = 644 X 216
-% [body_white(:,1), body_white(:,2)] = find(bodymap(:,:,1) == 255);
-% body_white_binary = double(bodymap==255);
-% imagesc(bodymap)
-
-%% Load Data
-filenames = dir(fullfile(datadir, 'pico_bodymap'));
-filenames = {filenames.name};
-subjectdir = filenames(contains(filenames','surveydata'))';
-
-B = []; b = [];
-B.bodymap = bodymap;
-B.bodymap_binary = body_white_binary;
-trials_num = 42;
-
-ratings = cell(1,5); % valence, self, time, vividness, safety-threat
-for dim_i = 1:5
-    ratings{dim_i} = zeros(trials_num,numel(subjectdir));
-end
-words = cell(trials_num, numel(subjectdir));
-
-j = 0;
-for subject_i = 1:numel(subjectdir)
-    
-    fprintf('\n>>> working on sub_%02d >>>', subject_i)
-    j=j+1;
-    
-    % load survey data of one subject    
-    O = load(fullfile(datadir, 'pico_bodymap', subjectdir{subject_i}));
-    original = O.survey.dat(:);
-    
-    % ratings
-    for dim_i = 1:5
-        for trial_i = 1:trials_num
-            ratings{dim_i}(trial_i,j) = original{trial_i}{dim_i}.rating;
-        end
-    end
-    
-    % words
-    temp = O.survey.words';
-    words(:,subject_i) = temp(:);
-    
-    b{j,1} = subjectdir{subject_i}; % the first column of B is subnum
-    % B{j,2} & B{j,3} = 42 x 2 cell
-    b{j,2} = cell(trials_num,2);    % the first column of B{j,2} is for red.
-                                    % the second column of B{j,2} is for blue.
-    b{j,3} = cell(trials_num,2);                         
-    for i = 1:trials_num
-        b{j,2}{i,1} = original{i,1}{1,6}.rating_red;
-        b{j,2}{i,2} = original{i,1}{1,6}.rating_blue;
-    end
-    
-    % Subtract empty area, x-1534, y-262
-    for i=1:trials_num
-        if ~isempty(b{j,2}{i,1})    % rating red
-            b{j,2}{i,1}(:,3) = b{j,2}{i,1}(:,1);
-            b{j,2}{i,1}(:,1) = [];
-            
-            b{j,2}{i,1}(:,1) = b{j,2}{i,1}(:,1)-cut_edge(1);    % y-axis, length
-            b{j,2}{i,1}(:,2) = b{j,2}{i,1}(:,2)-cut_edge(3);   % x-axis, width
-        end
-        
-        if ~isempty(b{j,2}{i,2})    % rating blue
-            b{j,2}{i,2}(:,3) = b{j,2}{i,2}(:,1);
-            b{j,2}{i,2}(:,1) = [];
-            
-            b{j,2}{i,2}(:,1) = b{j,2}{i,2}(:,1)-cut_edge(1);    % y-axis
-            b{j,2}{i,2}(:,2) = b{j,2}{i,2}(:,2)-cut_edge(3);   % x-axis
-        end
-    end
-    
-    % round up to integer
-    for i =1:trials_num
-        b{j,2}{i,1} = round(b{j,2}{i,1});
-        b{j,2}{i,2} = round(b{j,2}{i,2});
-    end
-    
-    % B{j,3} = 42 x 2 cell
-    for i = 1:trials_num
-        b{j,3}{i,1} = zeros(size(body_white_binary));     % 644 x 216 
-        b{j,3}{i,2} = zeros(size(body_white_binary));     % 644 x 216
-    end
-
-    for i = 1:trials_num
-        if ~isempty(b{j,2}{i,1})    % rating red
-            for m = 1:size(b{j,2}{i,1},1)
-                if b{j,2}{i,1}(m,1)>0 && b{j,2}{i,1}(m,2)>0 && b{j,2}{i,1}(m,1)<size(body_white_binary,1) && b{j,2}{i,1}(m,2)<size(body_white_binary,2)
-                    b{j,3}{i,1}(b{j,2}{i,1}(m,1), b{j,2}{i,1}(m,2)) = 1;
-                end
-            end
-        end
-        
-        if ~isempty(b{j,2}{i,2})    % rating blue
-            for m = 1:size(b{j,2}{i,2},1)
-                if b{j,2}{i,2}(m,1)>0 && b{j,2}{i,2}(m,2)>0 && b{j,2}{i,2}(m,1)<size(body_white_binary,1) && b{j,2}{i,2}(m,2)<size(body_white_binary,2)
-                    b{j,3}{i,2}(b{j,2}{i,2}(m,1), b{j,2}{i,2}(m,2)) = 1;
-                end
-            end
-        end
-    end
-end
-
-B.data = b;
-savename = fullfile(datadir, 'pico_body.mat');
-% save(savename, 'B', '-v7.3');
-
-subject_id = b(:,1);
-body_dat = b(:,3);
-ratings_descript = {'valence', 'self', 'time', 'vividness', 'safety-threat'};
 savename = fullfile(datadir, 'pico_dat.mat');
-% save(savename, 'subject_id', 'body_dat','ratings', 'ratings_descript', 'body_white_binary', 'words', '-v7.3');
-% save(savename, 'words', '-append');
+load(savename);
 
-%% FIGURE : Accumulate
-temp = [];
-z = 1;
-for i = 1:46
-    for j = 1:42
-        temp{1}(:,:,z) = b{i,3}{j,1};
-        temp{2}(:,:,z) = b{i,3}{j,2};
-        z = z+1;
+%% Convolution 
+% Magnify by using convolution
+conv_circle =  [0 0 0 1 1 1 1 0 0 0;
+                0 0 1 1 1 1 1 1 0 0;
+                0 1 1 1 1 1 1 1 1 0;
+                1 1 1 1 1 1 1 1 1 1;
+                1 1 1 1 1 1 1 1 1 1;
+                1 1 1 1 1 1 1 1 1 1;
+                0 1 1 1 1 1 1 1 1 0;
+                0 0 1 1 1 1 1 1 0 0;
+                0 0 0 1 1 1 1 0 0 0];
+          
+           
+%% example data 
+% body_data = body_dat{1}{5,1};
+% clim = max([max(max(body_data)) abs(min(min(body_data)))]);
+% % body_data = body_data + clim * body_white_binary; 
+% 
+% figure;
+% subplot(1,2,1);
+% imagesc(body_data, [-clim clim]);
+% c = [33,102,172;103,169,207;209,229,240;247,247,247;...
+%     253,219,199;239,138,98;178,24,43]/255;
+% colormap(c);
+% colorbar
+% 
+% subplot(1,2,2);
+% body_data_2 = conv2(body_data, conv_circle, 'same');
+% clim = max([max(max(body_data_2)) abs(min(min(body_data_2)))]);
+% imagesc(body_data_2, [-clim clim]);
+% set(gcf, 'position', [449 1 832 624], 'color', 'w');
+
+% dat = fmri_data(fullfile(datadir, 'fastmarker_self_unthresh.nii'));
+% dat = fmri_data(fullfile(datadir, 'fastmarker_self_unthresh_mpfc_only.nii'));
+% orthviews(dat);
+%%
+bodysz = [537, 180];
+clear *_all;
+
+% integrate activity and deactivity map
+for subj_i = 1:numel(body_dat)
+    for trial_i = 1:42
+        % red
+        act = body_dat{subj_i}{trial_i,1};
+        if isequal(size(act), bodysz)
+            act_conv = double(conv2(act, conv_circle, 'same')>0);
+        else
+            act_conv = NaN(bodysz);
+        end
+        
+        % blue
+        deact = body_dat{subj_i}{trial_i,2};
+        if isequal(size(deact), bodysz)
+            deact_conv = double(conv2(deact, conv_circle, 'same')>0);
+        else
+            deact_conv = NaN(bodysz);
+        end
+        
+        % blur with gaussian kernel
+        act_deact = imgaussfilt(act_conv-deact_conv,3);
+        % filter the out part of body
+        act_deact_all{subj_i}(:,trial_i) = act_deact(body_white_binary);
     end
 end
 
-% red accumulate
-body_data = sum(temp{1},3);
-clim = max([max(max(body_data)) abs(min(min(body_data)))]);
-body_data = body_data + clim * double(bodymap==0); 
-figure;
-imagesc(body_data, [-clim clim]);
-c = [33,102,172;103,169,207;209,229,240;247,247,247;...
-    253,219,199;239,138,98;178,24,43]/255;
-colormap(c);
-colorbar
-set(gcf, 'position', [721 119 247 506], 'color', 'w');
+%% quartile of 5 dimension survey data 
 
-% blue accumulate
-body_data = -sum(temp{2},3);
-clim = max([max(max(body_data)) abs(min(min(body_data)))]);
-body_data = body_data + clim * double(bodymap==0); 
-figure;
-imagesc(body_data, [-clim clim]);
-c = [33,102,172;103,169,207;209,229,240;247,247,247;...
-    253,219,199;239,138,98;178,24,43]/255;
-colormap(c);
-colorbar
-set(gcf, 'position', [721 119 247 506], 'color', 'w');
+for dim_i = 1:5
+    dat{dim_i} = fmri_data;
+    
+    for subj_i = 1:numel(body_dat)
+        score = ratings{dim_i}(:,subj_i);
+        
+        % divide the survey data to quartile
+        level_idx = zeros(size(score));
+        level_idx(score< prctile(score, 25)) = 1;
+        level_idx(score>=prctile(score, 25) & score<prctile(score, 50)) = 2;
+        level_idx(score>=prctile(score, 50) & score<prctile(score, 75)) = 3;
+        level_idx(score>=prctile(score, 75)) = 4;
+        
+        for j = 1:4
+            % mean of the survey data in each quartile 
+            dat{dim_i}.Y(4*(subj_i-1)+j,1) = mean(score(level_idx == j));
+            try
+                % mean of the bodymap in each quartile
+                dat{dim_i}.dat(:,4*(subj_i-1)+j) = mean(act_deact_all{subj_i}(:,level_idx == j),2);
+            catch
+                dat{dim_i}.dat = mean(act_deact_all{subj_i}(:,level_idx == j),2);
+            end
+        end        
+    end    
+end
+
+for i = 1:5
+    % index of subject number(j)
+    whfolds{i} = repmat(1:numel(act_deact_all), 4, 1);
+    whfolds{i} = whfolds{i}(:);
+    
+    % deal with the empty body map at some trial
+    dat{i}.Y(isnan(dat{i}.dat(1,:))) = [];      % survey
+    whfolds{i}(isnan(dat{i}.dat(1,:))) = [];    % subject index
+    dat{i}.dat(:,isnan(dat{i}.dat(1,:))) = [];  % bodymap
+end
 
 
-%% example
-subj_i = 1;
-trial_i = 20;
-body_data = b{subj_i,3}{trial_i,1} + double(bodymap==0) - b{subj_i,3}{trial_i,2};
-clim = max([max(max(body_data)) abs(min(min(body_data)))]);
+%% divide train data and test data
+train_id = 1:30;
+test_id = 31:46;
+
+for i = 1:5
+    dat_train{i} = dat{i};              % data of train set
+    whfolds_train{i} = whfolds{i};      % subject index for train set
+    
+    dat_train{i}.dat = dat{i}.dat(:,ismember(whfolds{i}, train_id)); % body map
+    dat_train{i}.Y = dat{i}.Y(ismember(whfolds{i}, train_id));      % survey data
+    whfolds_train{i} = whfolds{i}(ismember(whfolds{i}, train_id));
+    
+    dat_test{i} = dat{i};               % data of test set
+    whfolds_test{i} = whfolds{i};       % subject index for test set
+    
+    dat_test{i}.dat = dat{i}.dat(:,ismember(whfolds{i}, test_id));  % body map
+    dat_test{i}.Y = dat{i}.Y(ismember(whfolds{i}, test_id));        % survey data
+    whfolds_test{i} = whfolds{i}(ismember(whfolds{i}, test_id));
+end
+
+%% PCR with reduced number of components - using train data
+
+for i = 1:5
+    for j = 2:15
+        disp('========================================================');
+        fprintf('Working on the component %02d/%02d, model %d/%d\n', j, 20, i, 5);
+        disp('========================================================');
+        [cverr, stats_train{i}{j}, optout] = predict(dat_train{i}, 'algorithm_name', 'cv_pcr', 'nfolds', whfolds_train{i}, 'error_type', 'mse',  'numcomponents', j);
+    end
+end
+
+%% save data and results
+savedir = fullfile(fastprojectdir, 'data', 'analysis_results');
+savename = fullfile(savedir, 'fast_181031_body_prediction_data.mat');
+save(savename, 'dat', 'whfolds', 'stats_train', '-v7.3');
+
+%% load training results
+savedir = fullfile(fastprojectdir, 'data', 'analysis_results');
+savename = fullfile(savedir, 'fast_181031_body_prediction_data.mat');
+load(savename)
+
+%% prediction performance 
+
+clear r max_ncomp;
+
+for i = 1:5         % survey dimension
+    for j = 2:15   % the number of components
+        
+              % real survey data(mean) & predicted survey value
+        y_yfit = [stats_train{i}{j}.Y, stats_train{i}{j}.yfit];
+        
+        kk = 0;
+        for subj_i = unique(whfolds_train{i})'
+            kk = kk+1;
+            rr = corr(y_yfit(whfolds_train{i} == subj_i,:));    % correlation btw real & predicted within subject and mean it
+            within_sub_r_train{i}(kk,j-1) = rr(1,2);                             % r = 42(subject)x14(case of component) double
+        end
+        z = corr(y_yfit);
+        across_sub_r(i,j) = z(1,2);         % correlation across subject, it's lower than 'r'                 
+    end
+    
+    [max_r(i,1), max_ncomp(i,1)] = max(mean(within_sub_r_train{i})); 
+end
+
+% checking perfomance of each component number
+a = cellfun(@mean, within_sub_r_train, 'UniformOutput', false);  % a is same as r.
+a = cat(1,a{:})';                               % change to double(14x5) from cell
+figure;     % x axis = the number of components. y axis = r.
+plot(a, 'o-'); 
+% plot(mean(a,2))
+names = {'valence', 'self-relevance', 'time', 'vividness', 'safety-threat'};
+legend([names 'max'],  'Location','NorthEastOutside');
+
+max_r
+max_ncomp = max_ncomp' + 1
+max(across_sub_r') 
+% max_r = 
+% 0.4746    0.5739    0.0354    0.6638    0.3602
+% max_ncomp = 5 12 11 2 8
+% max(across_sub_r') = 0.3861    0.3521    0.0301    0.4010    0.2308
+
+for i=1:5 
+sss = within_sub_r_train{i}(:, max_ncomp(i));
+[~,idx] = sort(sss, 'descend');
+best_train_sub(i) = idx(1);
+end
+clear sss
+% 10    27     5    26    49
+
+%% Compare testing performance between the number of components
+
+clear r_test max_r_test
+for i = 1:5
+    for j = 2:15 %max_ncomp(i);
+        % real survey data (mean) & predicted survey value= model(1x63303)*bodymap(63303°ø120)
+        y_yfit = [dat_test{i}.Y, (stats_train{i}{j}.other_output{1}'*dat_test{i}.dat)'];
+        
+        kk = 0;
+        for subj_i = unique(whfolds_test{i})'
+            kk = kk + 1;
+            [rr,pp] = corr(y_yfit(whfolds_test{i} == subj_i,:));
+            r_test{i}(kk,j) = rr(1,2);
+            p_test{i}(kk,j) = pp(1,2);
+        end
+        
+        z = corr(y_yfit);
+        across_sub_r(i,j) = z(1,2);         % correlation across subject, it's lower than 'r'
+    end
+    %         mdl{i} = fitlm(y_yfit(:,1),y_yfit(:,2));    % ??
+    [max_r_test(i,1), max_ncomp_test(i,1)] = max(mean(r_test{i}));
+end
+
+% figure to compare cases of # components
+a = cellfun(@mean, r_test, 'UniformOutput', false);
+a = cat(1,a{:})';
 figure;
-imagesc(body_data, [-clim clim]);
-c = [33,102,172;103,169,207;209,229,240;247,247,247;...
-    253,219,199;239,138,98;178,24,43]/255;
-colormap(c);
-colorbar
-set(gcf, 'position', [721 119 247 506], 'color', 'w');
+plot(a, 'o-'); 
+hold on; 
+scatter(max_ncomp_test, diag(a(max_ncomp_test,:)), 30, 'k', 'filled');
+legend([names 'max'],  'Location','NorthEastOutside');
+
+best_test_sub = [find(r_test{1}(:,max_ncomp_test(1))==max(r_test{1}(:,max_ncomp_test(1)))),...
+    find(r_test{2}(:,max_ncomp_test(2))==max(r_test{2}(:,max_ncomp_test(2)))),...
+    find(r_test{3}(:,max_ncomp_test(3))==max(r_test{3}(:,max_ncomp_test(3)))),...
+    find(r_test{4}(:,max_ncomp_test(4))==max(r_test{4}(:,max_ncomp_test(4)))),...
+    find(r_test{5}(:,max_ncomp_test(5))==max(r_test{5}(:,max_ncomp_test(5))))];
+
+% component number which is best in the training set. 
+for z = 1:5
+    r_bestcomp_train(z) = mean(r_test{z}(:,max_ncomp(z)));  
+end
+
+max_r_test
+max_ncomp_test
+max(across_sub_r')
+% max_r_test =
+% 0.5283    0.6102    0.1697    0.6821    0.3937
+% max_ncomp_test = 
+% 7 12 4 6 12
+
+% if we choose the best # component of training, 
+% r_bestcomp_train = 0.5179    0.6102    0.0491    0.6118    0.3478
+
+% best_test_sub = 
+% 25    24    11    18     8
+
+%% visualize the model and save the figure
+
+figdir = fullfile(fastprojectdir, 'figures');
+
+% color code
+load 'colormap_colorbrewer_wani.mat';
+
+% pick up the data of a specific component for each dimension
+for i = 1:5
+    stats_max{i} = stats_train{i}{max_ncomp(i)}; 
+end
+
+% idx = find(body_white_binary>0);
+
+figure;
+for i = 1:5
+    subplot(1,5,i);
+    body_data = NaN(size(body_white_binary));
+    weights{i} = stats_max{i}.weight_obj.dat;       % [63303°ø1 double] comes from 'stats_train'
+    
+    body_data(idx) = weights{i}(:,1);       % filter inner part of body
+    clim = max([max(max(body_data)) abs(min(min(body_data)))]);
+    imagesc(body_data, [-clim clim]);
+    
+%     c = [33,102,172;103,169,207;209,229,240;247,247,247;
+%         253,219,199;239,138,98;178,24,43]/256;
+%     colormap(c);
+    colormap(col11_from_colorbrewer);
+    colorbar;
+    
+%     set(gcf, 'color', 'w', 'position', [ 560   322   274   626])  % one map
+    set(gcf, 'color', 'w', 'position', [441         322        2120         835])    % 5 maps
+    axis off
+    set(gca, 'fontsize', 18)
+    
+%     savename = fullfile(figdir, [names{i} '_onemap.pdf']);
+%     pagesetup(gcf);
+%     saveas(gcf, savename);
+%     
+%     pagesetup(gcf);
+%     saveas(gcf, savename); 
+end
+
+%     savename = fullfile(figdir, 'bodymodel_1031_abs.pdf');
+%     pagesetup(gcf);
+%     saveas(gcf, savename);
+%     
+%     pagesetup(gcf);
+%     saveas(gcf, savename); 
+
+
+%%
+
+
+%% Word cloud - each subject
+% word cloud for just predicted score
+names = {'valence', 'self-relevance', 'safety-threat', 'vividness', 'time'};
+subplot_num = [1 4 2 5 3];  
+words = get_var(D, {'word_eng'}, 'conditional', {'eventname', 'view'});
+w = words(jth,:,:);
+
+% 1 - dot product
+figure('position',[1,1,1500,800]);
+for subj_i = train_id(best_train_sub)'
+    for i = [1 2 5 4 3]
+        j = max_ncomp(i);
+        word_temp = w(subj_i,:);    % english
+        %         word_temp = w_kr(subj_i,:); % korean
+        
+        word = string(word_temp');
+        
+        body_temp = act_deact_all{subj_i};
+        
+        pred = (stats_train{i}{j}.other_output{1}'*body_temp)';
+        pred2 = (pred-min(pred))/(max(pred)-min(pred));   % normalization
+        
+        subplot(2,3,subplot_num(i))
+        wordcloud(word,pred2);
+        title(names{i})
+    end
+    saveas(gcf, fullfile(pwd, ['1101_wordcloud_' num2str(subj_i) '.png']));
+
+end
+% close
+
+
+%% 1101 poster
+% color1 = [33,102,172; 103,169,207;209,229,240;
+%     253,219,199;239,138,98;178,24,43;
+%     254,217,142; 254,153,41; 217,95,14; 153,52,4]/256;  % red-blue & orange
+
+color = [215,48,39; 252,141,89; 254,224,144; 255,255,191; 224,243,248;145,191,219; 69,117,180;
+224,240,197; 242 205 190; 228,248,192; 236,227,203; 224,207,215; 216 135 201; 225,31,159]/256;
+
+sss = [10 27 58 6 22];
+% 1 - dot product
+for  i = 1:5 % train_id([10, 27 52 26 22])'
+%     figure('position',[1,1,1500,800]);
+        subj_i = sss(i);
+%     for i = [1 2 5 4 3]
+        figure('position',[1,1,1270,1000]);    % one by one figure
+        j = max_ncomp(i);
+        word_temp = w(subj_i,:);
+        word = string(word_temp');
+        
+        body_temp = act_deact_all{subj_i};
+        
+        pred = (stats_train{i}{j}.other_output{1}'*body_temp)';
+        if mod(i,2)
+            pred_abs = abs(pred);
+        else 
+            pred_abs = pred;
+        end
+        pred_abs = (pred_abs-min(pred_abs))/(max(pred_abs)-min(pred_abs));   % normalization
+        
+        level_idx = zeros(numel(word),1);
+        if mod(i,2)
+%             level_idx(pred<= -0.7) = 1;
+%             level_idx(pred>-0.8 & pred<=0.4) = 2;
+%             level_idx(pred>0.4 & pred<=0) = 3;
+%             level_idx(pred>0 & pred<=0.4) = 4;
+%             level_idx(pred>0.4 & pred<=0.7) = 5;
+%             level_idx(pred>=0.7) = 6;
+            level_idx(pred<= prctile(pred, 14)) = 1;
+            level_idx(pred>prctile(pred, 14) & pred<=prctile(pred, 28)) = 2;
+            level_idx(pred>prctile(pred, 28) & pred<=prctile(pred, 50)) = 3;
+            level_idx(pred>prctile(pred, 50) & pred<=prctile(pred, 70)) = 4;
+            level_idx(pred>prctile(pred, 70) & pred<=prctile(pred, 80)) = 5;
+            level_idx(pred>prctile(pred, 80) & pred<=prctile(pred, 90)) = 6;
+            level_idx(pred>=prctile(pred, 90)) = 7;
+        else
+            level_idx(pred_abs<= prctile(pred_abs, 14)) = 8;
+            level_idx(pred_abs>prctile(pred_abs, 14) & pred_abs<=prctile(pred_abs, 28)) = 9;
+            level_idx(pred_abs>prctile(pred_abs, 28) & pred_abs<=prctile(pred_abs, 42)) = 10;
+            level_idx(pred_abs>prctile(pred_abs, 42) & pred_abs<=prctile(pred_abs, 56)) = 11;
+            level_idx(pred_abs>prctile(pred_abs, 56) & pred_abs<=prctile(pred_abs, 80)) = 12;
+            level_idx(pred_abs>prctile(pred_abs, 80) & pred_abs<=prctile(pred_abs, 95)) = 13;
+            level_idx(pred_abs>=prctile(pred_abs, 95)) = 14;
+        end
+        
+%         subplot(2,3,subplot_num(i))
+
+        h = wordcloud(word,pred_abs);
+        h.Color = color(level_idx,:);
+%         title(names{i})
+
+        savename = fullfile(pwd, sprintf('%s.pdf',names{i}));
+        pagesetup(gcf);
+        saveas(gcf, savename);
+        
+        pagesetup(gcf);
+        saveas(gcf, savename);
+        %     end
+end
+% close all
+
